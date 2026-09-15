@@ -1,0 +1,189 @@
+// Production PostgreSQL schema.
+// The MVP runs on the JSON-file adapter (DATABASE_ADAPTER=json) so it works
+// with zero infrastructure; this schema is the migration target — the
+// repository layer in lib/db is shaped to match it 1:1.
+//
+// Setup: npm i -D prisma @prisma/client && npx prisma migrate dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String
+  role         String   @default("user") // user | admin
+  plan         String   @default("free") // free | pro
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  projects     Project[]
+  subscription Subscription?
+  usage        UsageEvent[]
+  @@index([email])
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  @@index([userId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestToken  String?
+  idea        String
+  input       Json
+  analysis    Json?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  brandKit    BrandKit?
+  assets      GeneratedAsset[]
+  keywords    KeywordSet[]
+  ideas       ContentIdea[]
+  @@index([userId, createdAt])
+  @@index([guestToken])
+}
+
+model BrandKit {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  tagline   String
+  colors    Json
+  fonts     Json
+  logoStyle String
+  updatedAt DateTime @updatedAt
+}
+
+model GeneratedAsset {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assetType    String // logo | banner | watermark
+  storageKey   String // object storage key — binaries never live in Postgres
+  mimeType     String
+  width        Int
+  height       Int
+  promptSummary String
+  provider     String
+  createdAt    DateTime @default(now())
+  @@index([projectId, assetType])
+}
+
+model KeywordSet {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  groups    Json
+  source    String   @default("ai") // ai | external (verified data provider)
+  createdAt DateTime @default(now())
+  @@index([projectId])
+}
+
+model ContentIdea {
+  id            String  @id @default(cuid())
+  projectId     String
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind          String // long | short
+  title         String
+  hook          String
+  targetKeyword String
+  difficulty    String
+  contentPillar String
+  createdAt     DateTime @default(now())
+  @@index([projectId, kind])
+}
+
+model GenerationRequest {
+  id             String    @id @default(cuid())
+  userId         String?
+  guestToken     String?
+  projectId      String?
+  provider       String
+  model          String
+  requestType    String
+  status         String // queued | processing | completed | failed | cancelled
+  progress       Int       @default(0)
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  tokensUsed     Int       @default(0)
+  estimatedCost  Float     @default(0)
+  errorMessage   String?
+  @@index([userId, startedAt])
+  @@index([requestType, status])
+}
+
+model UsageEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestToken String?
+  kind       String // text | image
+  day        String // YYYY-MM-DD
+  at         DateTime @default(now())
+  @@index([userId, day, kind])
+  @@index([guestToken, day, kind])
+}
+
+model Subscription {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider           String
+  providerCustomerId String?
+  status             String // active | cancelled | past_due
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime @default(now())
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  userId     String
+  provider   String
+  amount     Int // smallest currency unit
+  currency   String
+  status     String
+  createdAt  DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  provider  String
+  model     String
+  tokens    Int
+  cost      Float
+  day       String
+  @@index([day, provider])
+}
+
+model SavedGeneration {
+  id          String   @id @default(cuid())
+  userId      String
+  requestType String
+  payload     Json
+  createdAt   DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  name       String
+  userId     String?
+  guestToken String?
+  props      Json
+  at         DateTime @default(now())
+  @@index([name, at])
+}
