@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 # ChannelForge AI
 
 > **Turn your YouTube idea into a complete channel brand in minutes.**
@@ -181,11 +179,3 @@ each swap is isolated behind its interface.
 1. Postgres + Prisma migrate (schema ready) → 2. Redis rate limiting + BullMQ workers →
 3. S3 signed URLs (route already isolates serving) → 4. Real keyword API behind KeywordService →
 5. Payment provider activation → 6. A/B prompt versions (`*_V2` slots exist) → 7. CDN + ISR.
-=======
-# Youtube_channel_starter_kit
-ChannelForge AI is an AI-powered YouTube channel starter kit that helps creators turn an idea into a complete channel brand. Generate channel names, descriptions, keywords, content ideas, logos, banners, watermarks, and brand kits using AI—all from one simple, beginner-friendly platform.
->>>>>>> 9893f8abd5b8d9d4cf18c3e7fd2068cc80291ce0
-=======
-# Youtube_channel_starter_kit
-ChannelForge AI is an AI-powered YouTube channel starter kit that helps creators turn an idea into a complete channel brand. Generate channel names, descriptions, keywords, content ideas, logos, banners, watermarks, and brand kits using AI—all from one simple, beginner-friendly platform.
->>>>>>> 9893f8abd5b8d9d4cf18c3e7fd2068cc80291ce0
